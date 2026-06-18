@@ -199,10 +199,6 @@ function drawSpace(ctx, W, H, p) {
     ctx.lineTo(mx, my + moonR * 0.6);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = 'rgba(10,14,28,0.85)';
-    ctx.beginPath();
-    ctx.arc(hitX + 2, my, moonR * 0.45, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   /* 지구 본체 + 회전 대륙(반시계) */
@@ -235,6 +231,29 @@ function drawSpace(ctx, W, H, p) {
   ctx.arc(Ex, Ey, Re, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+
+  /* 지표에 닿은 그림자(반영+본영): p=0 1차 접촉 ~ p=1 종료 가 관측자에서 일어나도록 크기 설정 */
+  if (Math.abs(my - Ey) < Re) {
+    const hitXs = Ex - Math.sqrt(Re * Re - (my - Ey) * (my - Ey));
+    // p=0(=p=1, 대칭) 시점의 그림자–관측자 분리 = 반영 반지름
+    const my0 = Ey - aM * Math.sin(Math.PI - dThM / 2);
+    const hitX0 = Ex - Math.sqrt(Math.max(0, Re * Re - (my0 - Ey) * (my0 - Ey)));
+    const [ox0, oy0] = S(Ex, Ey, Re, Math.PI - dThE / 2);
+    const Rp = Math.hypot(hitX0 - ox0, my0 - oy0);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(Ex, Ey, Re, 0, Math.PI * 2);
+    ctx.clip();
+    const sg = ctx.createRadialGradient(hitXs, my, Math.max(2, Rp * 0.22), hitXs, my, Rp);
+    sg.addColorStop(0, C.shadow);
+    sg.addColorStop(0.45, 'rgba(10,14,28,0.5)');
+    sg.addColorStop(1, 'rgba(10,14,28,0.05)');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(hitXs, my, Rp, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 
   /* 관측자가 자전으로 쓸고 간 각(≈30°) — '조금만 돈다'를 강조 */
   ctx.fillStyle = 'rgba(14,116,144,0.18)';
@@ -310,9 +329,9 @@ function drawSky(ctx, W, H, p) {
   const cx = W / 2;
   const cy = H * 0.52;
   const sunR = Math.min(W, H) * 0.17;
-  const travel = sunR * 2.1;
-
-  // 정답: 달이 오른쪽(서) → 왼쪽(동)으로 이동. p=0 오른쪽, p=1 왼쪽
+  const moonRadius = sunR * 1.02;
+  // p=0: 1차 접촉(달 왼쪽 끝이 태양 오른쪽 끝에 닿음), p=1: 종료(달이 왼쪽으로 완전히 벗어남)
+  const travel = sunR + moonRadius;
   const moonX = cx + (1 - 2 * p) * travel;
 
   /* 태양: 글로우 + 본체 */
@@ -350,7 +369,7 @@ function drawSky(ctx, W, H, p) {
     ctx.strokeStyle = C.wrong;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(wrongX, cy, sunR, 0, Math.PI * 2);
+    ctx.arc(wrongX, cy, moonRadius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
     text(ctx, '학생 예측(왼쪽부터·틀림)', cx, H - 26, { size: 11, color: C.wrong, align: 'center' });
@@ -359,12 +378,12 @@ function drawSky(ctx, W, H, p) {
   /* 정답 달: 태양을 가린다 (하늘색으로 덮어 가림 표현) */
   ctx.fillStyle = C.moon;
   ctx.beginPath();
-  ctx.arc(moonX, cy, sunR * 1.02, 0, Math.PI * 2);
+  ctx.arc(moonX, cy, moonRadius, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = C.moonRim;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(moonX, cy, sunR * 1.02, 0, Math.PI * 2);
+  ctx.arc(moonX, cy, moonRadius, 0, Math.PI * 2);
   ctx.stroke();
 
   /* 방위 표시: E(동) 왼쪽, W(서) 오른쪽 */
@@ -375,8 +394,8 @@ function drawSky(ctx, W, H, p) {
 
   // 진행 화살표(달 이동 방향)
   if (state.showVectors) {
-    arrow(ctx, moonX, cy - sunR * 1.02 - 14, moonX - 34, cy - sunR * 1.02 - 14, C.vLin, 2.5, 7);
-    text(ctx, '달 이동(동쪽으로)', moonX - 4, cy - sunR * 1.02 - 20, { size: 10.5, color: C.vLin, align: 'right' });
+    arrow(ctx, moonX, cy - moonRadius - 14, moonX - 34, cy - moonRadius - 14, C.vLin, 2.5, 7);
+    text(ctx, '달 이동(동쪽으로)', moonX - 4, cy - moonRadius - 20, { size: 10.5, color: C.vLin, align: 'right' });
   }
 
   text(ctx, '오른쪽(서)부터 가려짐 ✓', cx, H - 10, { size: 12, weight: '700', color: C.accent, align: 'center' });
@@ -431,29 +450,34 @@ function drawGround(ctx, W, H, p) {
   ctx.lineTo(shadowX, obsY - 52);
   ctx.stroke();
 
-  // 일식 중?(그림자가 관측자 위)
-  const umbraR = 30;
-  const inEclipse = Math.abs(shadowX - obsX) < umbraR * 0.6;
-  if (inEclipse) {
-    ctx.fillStyle = 'rgba(20,30,50,0.14)';
+  // 반영(penumbra)/본영(umbra) 폭: p=0 1차 접촉, p=1 종료 가 관측자에서 일어나도록 설정
+  const Rp = 0.5 * (aShadow - aObs) * laneW;   // 그림자–관측자 최대 분리 = 반영 반지름
+  const rel = shadowX - obsX;
+  const coverage = Math.max(0, 1 - Math.abs(rel) / Rp); // 0(1차/종료 접촉) ~ 1(최대식)
+
+  // 부분식 동안 내내(0~1) 하늘이 어두워지고, 최대식에서 가장 어둡게
+  if (coverage > 0) {
+    ctx.fillStyle = `rgba(20,30,50,${0.04 + 0.16 * coverage})`;
     ctx.fillRect(0, 0, W, laneY);
   }
 
-  // 달그림자 (반영+본영)
-  const pg = ctx.createRadialGradient(shadowX, obsY - 52, 4, shadowX, obsY - 52, umbraR);
-  pg.addColorStop(0, C.shadow);
-  pg.addColorStop(0.6, C.shadow);
-  pg.addColorStop(1, C.penumbra);
-  ctx.fillStyle = pg;
-  ctx.beginPath();
-  ctx.ellipse(shadowX, obsY - 52, umbraR, umbraR * 0.7, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // 그림자에서 지면으로 떨어지는 선
-  ctx.strokeStyle = 'rgba(10,14,28,0.5)';
+  // 지표를 가로지르는 달그림자 커튼: 가운데 본영(진함) + 양옆 반영(연함)
+  const bandTop = 30;
+  const bg = ctx.createLinearGradient(shadowX - Rp, 0, shadowX + Rp, 0);
+  bg.addColorStop(0.00, 'rgba(10,14,28,0)');
+  bg.addColorStop(0.32, C.penumbra);
+  bg.addColorStop(0.50, C.shadow);
+  bg.addColorStop(0.68, C.penumbra);
+  bg.addColorStop(1.00, 'rgba(10,14,28,0)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(shadowX - Rp, bandTop, 2 * Rp, laneY - bandTop);
+
+  // 본영 중심선(관측자를 추월하는 빠른 지점)
+  ctx.strokeStyle = 'rgba(10,14,28,0.45)';
   ctx.setLineDash([3, 4]);
   ctx.beginPath();
-  ctx.moveTo(shadowX, obsY - 52);
-  ctx.lineTo(shadowX, obsY);
+  ctx.moveTo(shadowX, bandTop);
+  ctx.lineTo(shadowX, laneY);
   ctx.stroke();
   ctx.setLineDash([]);
 
