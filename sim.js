@@ -136,131 +136,155 @@ function disc(ctx, s, W, H) {
 }
 
 /* =====================================================================
- * ① 우주 시점 — 자전(각속도)과 공전(선속도)의 대비
+ * ① 북극 상공 시점 — 자전·공전(둘 다 반시계)과 선속도 대비
+ *   · 일식 전 과정(1~4차 접촉) ≈ 2시간: 지구는 ω·t ≈ 30°만 자전, 달은 ~1° 공전
+ *   · 달 거리는 화면에 맞게 압축하되, 그림자가 관측자보다 빠른(선속도 2.2배) 점은 유지
  * ===================================================================== */
 function drawSpace(ctx, W, H, p) {
   ctx.fillStyle = C.panel;
   ctx.fillRect(0, 0, W, H);
-  panelTitle(ctx, '① 우주에서 본 지구–달–햇빛');
+  panelTitle(ctx, '① 북극 상공에서 본 지구–달–햇빛');
 
-  const midY = H * 0.54;
-  const earthR = Math.min(H * 0.21, 64);
-  const earthX = W - earthR - 26;
-  const moonR = Math.max(7, earthR * 0.36);
-  const moonX = W * 0.45;
-  const drift = (p - 0.5) * earthR * 1.0;     // 달이 위로 천천히 이동
-  const moonY = midY - drift;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // 북극에서 내려다본 화면: θ가 커지면 화면상 '반시계'가 되도록 y를 뒤집어 배치
+  const S = (cx, cy, r, th) => [cx + r * Math.cos(th), cy - r * Math.sin(th)];
 
-  /* 평행한 햇빛 (왼쪽 → 오른쪽) */
-  ctx.save();
+  const Ey = H * 0.56;
+  const Re = Math.min(H * 0.20, 54);
+  const Ex = W - Re - 30;
+  const moonR = Math.max(6, Re * 0.34);
+
+  // 실제 각이동: 일식 ≈ 2시간 동안
+  const T_ECL = 2 * 3600;                      // s
+  const dThE = PHYS.wE * T_ECL;                // ≈ 0.524 rad ≈ 30° (지구 자전)
+  const earthArc = Re * dThE;                  // 관측자가 쓴 호 길이(px)
+  const moonPath = PHYS.vRatio * earthArc;     // 달 경로 길이(px) = 2.2배(선속도 비)
+  const aM = clamp(Ex - 62, 118, 230);         // 달 궤도 반지름(압축)
+  const dThM = moonPath / aM;                  // 화면상 달 공전각(가시화 위해 과장)
+
+  // p=0.5에서 태양–달–관측자 정렬(최대식)되도록 스윕을 가운데 정렬. 둘 다 반시계(θ 증가)
+  const obsTh = Math.PI - dThE / 2 + dThE * p;
+  const moonTh = Math.PI - dThM / 2 + dThM * p;
+  const [ox, oy] = S(Ex, Ey, Re, obsTh);
+  const [mx, my] = S(Ex, Ey, aM, moonTh);
+
+  /* 평행한 햇빛 (왼→오) */
   for (let i = 0; i < 5; i++) {
-    const ry = midY - earthR * 1.05 + (i * earthR * 2.1) / 4;
-    arrow(ctx, 8, ry, 56, ry, 'rgba(255,206,58,0.55)', 2, 6);
+    const ry = Ey - Re * 1.1 + (i * Re * 2.2) / 4;
+    arrow(ctx, 6, ry, 46, ry, 'rgba(255,206,58,0.5)', 2, 6);
   }
-  text(ctx, '햇빛(평행)', 8, midY - earthR * 1.05 - 8, { size: 11, color: C.sun });
-  ctx.restore();
+  text(ctx, '햇빛(평행)', 6, Ey - Re * 1.1 - 7, { size: 10.5, color: C.sun });
 
-  /* 달 공전 궤도 (지구 중심 기준, 모식) */
+  /* 달 공전 궤도(압축) */
   ctx.strokeStyle = 'rgba(255,255,255,0.10)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 5]);
   ctx.beginPath();
-  ctx.ellipse(earthX, midY, earthX - moonX, earthR * 1.6, 0, 0, Math.PI * 2);
+  ctx.arc(Ex, Ey, aM, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  /* 달그림자: 달에서 오른쪽(햇빛 방향)으로 지구 표면까지 */
-  if (Math.abs(moonY - midY) < earthR) {
-    const hitX = earthX - Math.sqrt(earthR * earthR - (moonY - midY) * (moonY - midY));
-    const g = ctx.createLinearGradient(moonX, 0, hitX, 0);
-    g.addColorStop(0, 'rgba(4,7,16,0.55)');
-    g.addColorStop(1, 'rgba(4,7,16,0.0)');
+  /* 달그림자: 달에서 +x(햇빛) 방향으로 지구 sunward 표면까지 (관성계에서 관측자보다 빠르게 이동) */
+  if (Math.abs(my - Ey) < Re) {
+    const hitX = Ex - Math.sqrt(Re * Re - (my - Ey) * (my - Ey));
+    const g = ctx.createLinearGradient(mx, my, hitX, my);
+    g.addColorStop(0, 'rgba(4,7,16,0.0)');
+    g.addColorStop(1, 'rgba(4,7,16,0.55)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.moveTo(moonX, moonY - moonR * 0.7);
-    ctx.lineTo(hitX, midY + (moonY - midY) - moonR * 0.5);
-    ctx.lineTo(hitX, midY + (moonY - midY) + moonR * 0.5);
-    ctx.lineTo(moonX, moonY + moonR * 0.7);
+    ctx.moveTo(mx, my - moonR * 0.6);
+    ctx.lineTo(hitX, my - moonR * 0.55);
+    ctx.lineTo(hitX, my + moonR * 0.55);
+    ctx.lineTo(mx, my + moonR * 0.6);
     ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(4,7,16,0.85)';
+    ctx.beginPath();
+    ctx.arc(hitX + 2, my, moonR * 0.45, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  /* 지구 (자전: 대륙 회전 + 관측자 + 자전 화살표) */
-  const spin = p * 6 * Math.PI * 2;           // 모식적으로 여러 바퀴
+  /* 지구 본체 + 회전 대륙(반시계) */
   ctx.save();
   ctx.beginPath();
-  ctx.arc(earthX, midY, earthR, 0, Math.PI * 2);
-  const eg = ctx.createRadialGradient(earthX - earthR * 0.3, midY - earthR * 0.3, earthR * 0.2, earthX, midY, earthR);
+  ctx.arc(Ex, Ey, Re, 0, Math.PI * 2);
+  const eg = ctx.createRadialGradient(Ex - Re * 0.3, Ey - Re * 0.3, Re * 0.2, Ex, Ey, Re);
   eg.addColorStop(0, C.earth);
   eg.addColorStop(1, C.earthDeep);
   ctx.fillStyle = eg;
   ctx.fill();
   ctx.save();
   ctx.clip();
-  // 회전하는 대륙(모식)
   ctx.fillStyle = C.land;
-  const blobs = [[0.35, -0.2, 0.55], [-0.4, 0.25, 0.45], [0.1, 0.55, 0.35]];
-  for (const [bx, by, br] of blobs) {
-    const ang = Math.atan2(by, bx) + spin;
-    const rad = Math.hypot(bx, by) * earthR;
-    const x = earthX + rad * Math.cos(ang);
-    const y = midY + rad * Math.sin(ang);
+  const spin = dThE * (p - 0.5);
+  const blobs = [[0.42, 0.35, 0.55], [0.55, -0.25, 0.42], [0.18, 1.05, 0.32]];
+  for (const [br, ba, bs] of blobs) {
+    const [bx, by] = S(Ex, Ey, br * Re, ba + spin);
     ctx.beginPath();
-    ctx.arc(x, y, br * earthR * 0.55, 0, Math.PI * 2);
+    ctx.arc(bx, by, bs * Re * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
-  // 밤(그림자 쪽) 약하게
-  const ng = ctx.createLinearGradient(earthX - earthR, 0, earthX + earthR, 0);
+  // 밤 반구 음영
+  const ng = ctx.createLinearGradient(Ex - Re, Ey, Ex + Re, Ey);
   ng.addColorStop(0, 'rgba(0,0,0,0)');
   ng.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = ng;
   ctx.beginPath();
-  ctx.arc(earthX, midY, earthR, 0, Math.PI * 2);
+  ctx.arc(Ex, Ey, Re, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // 관측자 (자전과 함께 도는 점, 햇빛 받는 왼쪽 반구 위주)
-  const obsAng = Math.PI + spin;              // 왼쪽 림에서 시작
-  const obsX = earthX + earthR * Math.cos(obsAng);
-  const obsY = midY + earthR * Math.sin(obsAng);
+  /* 관측자가 자전으로 쓸고 간 각(≈30°) — '조금만 돈다'를 강조 */
+  ctx.fillStyle = 'rgba(34,211,238,0.16)';
+  ctx.beginPath();
+  ctx.moveTo(Ex, Ey);
+  ctx.arc(Ex, Ey, Re * 0.6, -(Math.PI - dThE / 2), -obsTh, true);
+  ctx.closePath();
+  ctx.fill();
+
+  /* 관측자 */
   ctx.fillStyle = C.obs;
   ctx.beginPath();
-  ctx.arc(obsX, obsY, 4, 0, Math.PI * 2);
+  ctx.arc(ox, oy, 4.5, 0, Math.PI * 2);
   ctx.fill();
 
-  /* 달 */
-  ctx.fillStyle = '#b9c2d6';
+  /* 달 (태양쪽=왼쪽 밝음, 오른쪽 어둠) */
+  ctx.fillStyle = '#c2cbdd';
   ctx.beginPath();
-  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.arc(mx, my, moonR, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(moonX + moonR * 0.3, moonY, moonR, 0, Math.PI * 2);
+  ctx.arc(mx, my, moonR, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.beginPath();
+  ctx.arc(mx + moonR * 0.55, my, moonR, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
 
-  /* 벡터 & 라벨 */
+  /* 회전 방향(반시계) */
+  arrow(ctx, Ex + 11, Ey - Re - 6, Ex - 11, Ey - Re - 6, C.vAng, 2.5, 7); // 지구 위에서 왼쪽 = 반시계
+  text(ctx, '자전 ↺', Ex - 14, Ey - Re - 11, { size: 10.5, color: C.vAng, align: 'right' });
+  text(ctx, '공전 ↺', mx, my + moonR + 13, { size: 10, color: C.vAng, align: 'center' });
+
+  /* 선속도 벡터(접선, 반시계) — 비율 2.2 유지 */
   if (state.showVectors) {
-    // 관측자 선속도(짧음) — 접선 방향
-    const tA = obsAng + Math.PI / 2;
-    const vS = 22;
-    arrow(ctx, obsX, obsY, obsX + vS * Math.cos(tA), obsY + vS * Math.sin(tA), C.vLin, 2.5, 7);
-    // 달 선속도(긺) — 위쪽(공전 접선), 비율 2.2배
-    const vM = vS * PHYS.vRatio;
-    arrow(ctx, moonX, moonY, moonX, moonY - vM, C.vLin, 2.5, 8);
-
-    // 자전 각속도(큰 곡선 화살표)
-    curvedArrow(ctx, earthX, midY, earthR + 12, -1.1, 0.7, C.vAng, 3);
-    // 공전 각속도(작은 곡선 화살표)
-    curvedArrow(ctx, moonX, moonY, moonR + 9, Math.PI * 0.85, Math.PI * 1.15, C.vAng, 2.5);
-
-    text(ctx, '자전 ω 큼 (27×)', earthX, midY + earthR + 30, { size: 11, color: C.vAng, align: 'center' });
-    text(ctx, '465 m/s', obsX + 6, obsY + 16, { size: 10.5, color: C.vLin });
-    text(ctx, '공전 ω 작음', moonX, moonY + moonR + 16, { size: 11, color: C.vAng, align: 'center' });
-    text(ctx, '1,023 m/s', moonX + moonR + 6, moonY - vM + 12, { size: 10.5, color: C.vLin });
+    const obsLen = 20, moonLen = 20 * PHYS.vRatio;
+    const ot = [-Math.sin(obsTh), -Math.cos(obsTh)];   // d/dθ S = 반시계 접선
+    const mt = [-Math.sin(moonTh), -Math.cos(moonTh)];
+    arrow(ctx, mx, my, mx + moonLen * mt[0], my + moonLen * mt[1], C.vLin, 2.5, 8);
+    arrow(ctx, ox, oy, ox + obsLen * ot[0], oy + obsLen * ot[1], C.vLin, 2.5, 7);
+    text(ctx, '달 1,023 m/s', mx + 8, my - moonLen * 0.5, { size: 10.5, color: C.vLin });
+    text(ctx, '관측자 465 m/s', ox - 8, oy + 14, { size: 10.5, color: C.obs, align: 'right' });
   }
 
-  disc(ctx, '거리·크기 비례 아님 · 속도 비율은 실제값', W, H);
+  /* 라벨 */
+  text(ctx, '약 2시간: 지구 30° 자전 · 달 ~1° 공전', 12, 40, { size: 11, color: C.text });
+  text(ctx, '둘 다 반시계 · 선속도는 달이 2.2× (벡터 길이)', 12, 56, { size: 10.5, color: C.vLin });
+
+  disc(ctx, '거리 압축(비례 아님) · 달 공전각은 가시화 위해 과장', W, H);
 }
 
 /* =====================================================================
