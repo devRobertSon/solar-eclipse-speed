@@ -60,17 +60,8 @@ python3 -m http.server 8000
 
 ## GitHub Pages로 배포하기
 
-이 저장소에는 `.github/workflows/pages.yml`(GitHub Actions 자동 배포)이 포함되어 있습니다.
-**한 번만** 저장소 설정에서 Pages를 켜면 됩니다.
-
-**방법 A — GitHub Actions (권장)**
-1. 저장소 **Settings → Pages** 이동
-2. **Build and deployment → Source** 를 **GitHub Actions** 로 선택
-3. 이 브랜치(또는 `main`)에 푸시되면 워크플로가 자동 배포 → 출력된 URL로 접속
-
-**방법 B — 브랜치에서 직접 서빙**
-1. 이 변경을 `main` 브랜치로 머지
-2. **Settings → Pages → Source: Deploy from a branch** 선택, 브랜치 `main` / 폴더 `/ (root)` 지정
+빌드가 필요 없는 순수 정적 사이트라 `index.html`을 그대로 서빙하면 됩니다.
+배포(자동화)는 저장소 소유자가 별도로 구성해 두었습니다.
 
 > 배포 URL은 보통 `https://<사용자명>.github.io/solar-eclipse-speed/` 형식입니다.
 
