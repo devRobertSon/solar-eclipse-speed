@@ -29,28 +29,44 @@
           달은 지구 중심에서 약 60배 멀리 있어, 각속도가 1/27이어도
           선속도는 <code>(1/27) × 60 ≈ 2.2배</code>로 더 큽니다.
         </p>
+        <h3 class="exp-h">입력값 (실제 측정값)</h3>
         <table class="phys-table">
           <thead>
-            <tr><th></th><th>각속도 ω</th><th>선속도 v = ω·r</th></tr>
+            <tr><th>양</th><th>기호</th><th>실제 값</th></tr>
           </thead>
           <tbody>
             <tr>
-              <th>지구 자전(지표)</th>
-              <td>큼 (≈15°/h)</td>
-              <td>ω·R<sub>지구</sub> ≈ <strong>465 m/s</strong> (≈1,670 km/h)</td>
+              <th>지구 자전 각속도</th>
+              <td>ω<sub>지구</sub></td>
+              <td>2π / 23.934 h = <strong>7.29×10<sup>−5</sup> rad/s</strong> (≈ 15.0°/h)</td>
             </tr>
             <tr>
-              <th>달 공전</th>
-              <td>작음 (≈0.5°/h)</td>
-              <td>ω·d<sub>달</sub> ≈ <strong>1,023 m/s</strong> (≈3,680 km/h)</td>
+              <th>지표까지 거리 (지구 반지름)</th>
+              <td>R<sub>지구</sub></td>
+              <td><strong>6,371 km</strong> = 6.371×10<sup>6</sup> m</td>
             </tr>
-            <tr class="ratio-row">
-              <th>비교</th>
-              <td>지구가 <strong>27배</strong> 큼</td>
-              <td>달이 <strong>2.2배</strong> 큼</td>
+            <tr>
+              <th>달 공전 각속도</th>
+              <td>ω<sub>달</sub></td>
+              <td>2π / 27.32일 = <strong>2.66×10<sup>−6</sup> rad/s</strong> (≈ 0.55°/h)</td>
+            </tr>
+            <tr>
+              <th>달까지 거리 (공전 반지름)</th>
+              <td>d<sub>달</sub></td>
+              <td><strong>384,400 km</strong> = 3.844×10<sup>8</sup> m</td>
             </tr>
           </tbody>
         </table>
+
+        <h3 class="exp-h">선속도 계산 (v = ω·r)</h3>
+        <ul class="calc-list">
+          <li>v<sub>지표</sub> = ω<sub>지구</sub> × R<sub>지구</sub> = 7.29×10<sup>−5</sup> × 6.371×10<sup>6</sup> ≈ <strong>465 m/s</strong> (≈1,673 km/h)</li>
+          <li>v<sub>달</sub> = ω<sub>달</sub> × d<sub>달</sub> = 2.66×10<sup>−6</sup> × 3.844×10<sup>8</sup> ≈ <strong>1,023 m/s</strong> (≈3,684 km/h)</li>
+          <li>각속도 비 ω<sub>지구</sub> / ω<sub>달</sub> ≈ <strong>27.4</strong> (지구 자전이 빠름)</li>
+          <li>거리 비 d<sub>달</sub> / R<sub>지구</sub> ≈ <strong>60.3</strong></li>
+          <li>선속도 비 v<sub>달</sub> / v<sub>지표</sub> = (1/27.4) × 60.3 ≈ <strong>2.20</strong> (달이 빠름)</li>
+          <li>지면 대비 그림자 속도 = 1,023 − 465 ≈ <strong>558 m/s</strong> (≈2,011 km/h)</li>
+        </ul>
         <p>
           결론: 달그림자가 지면(465 m/s)보다 동쪽으로 더 빨리(1,023 m/s) 달려,
           지면 기준 <strong>약 558 m/s(≈2,010 km/h)</strong>로 서→동으로 지나갑니다.

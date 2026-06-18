@@ -81,6 +81,19 @@ body {
 .phys-table tbody th { background: rgba(20, 30, 50, 0.03); white-space: nowrap; }
 .ratio-row td, .ratio-row th { background: rgba(14, 116, 144, 0.10); }
 
+.explainer-body .exp-h {
+  font-size: 0.95rem;
+  margin: 16px 0 6px;
+  color: var(--accent);
+}
+.calc-list {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+  font-size: 0.92rem;
+}
+.calc-list li { margin: 3px 0; }
+.calc-list sup { font-size: 0.78em; }
+
 /* ---------- Controls ---------- */
 .controls {
   background: var(--panel);
