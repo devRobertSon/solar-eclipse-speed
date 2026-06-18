@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일식 달그림자 속도 — 각속도 vs 선속도</title>
+  <meta name="description" content="지구 자전 각속도가 달 공전 각속도보다 커도, 달의 선속도가 더 커서 달 그림자가 지표를 빠르게 지나가는 이유를 여러 시점에서 보여주는 시뮬레이션." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>일식 때 달그림자는 왜 빠를까?</h1>
+    <p class="tagline">
+      지구 자전 <strong>각속도</strong>가 달 공전 각속도보다 약 <strong>27배</strong> 크지만,
+      달은 60배 멀리 있어 <strong>선속도</strong>는 달이 약 <strong>2.2배</strong> 빠릅니다.
+      그래서 달그림자가 지표를 빠르게 지나가고, 태양은 <strong>오른쪽(서쪽)부터</strong> 가려집니다.
+    </p>
+
+    <details class="explainer">
+      <summary>왜 그런가요? (펼쳐서 설명 보기)</summary>
+      <div class="explainer-body">
+        <p>
+          학생들의 주장: <em>“지구 자전 각속도(≈15°/h)가 달 공전 각속도(≈0.5°/h)보다 27배 크니까,
+          관측자가 달을 앞질러서 달이 상대적으로 뒤로 밀리고, 그래서 태양을 <u>왼쪽부터</u> 가린다.”</em>
+          — 이는 <strong>각속도만 비교</strong>한 오류입니다.
+        </p>
+        <p>
+          가려지는 방향을 정하는 것은 각속도가 아니라 <strong>지표에서의 선속도</strong>입니다.
+          달은 지구 중심에서 약 60배 멀리 있어, 각속도가 1/27이어도
+          선속도는 <code>(1/27) × 60 ≈ 2.2배</code>로 더 큽니다.
+        </p>
+        <table class="phys-table">
+          <thead>
+            <tr><th></th><th>각속도 ω</th><th>선속도 v = ω·r</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>지구 자전(지표)</th>
+              <td>큼 (≈15°/h)</td>
+              <td>ω·R<sub>지구</sub> ≈ <strong>465 m/s</strong> (≈1,670 km/h)</td>
+            </tr>
+            <tr>
+              <th>달 공전</th>
+              <td>작음 (≈0.5°/h)</td>
+              <td>ω·d<sub>달</sub> ≈ <strong>1,023 m/s</strong> (≈3,680 km/h)</td>
+            </tr>
+            <tr class="ratio-row">
+              <th>비교</th>
+              <td>지구가 <strong>27배</strong> 큼</td>
+              <td>달이 <strong>2.2배</strong> 큼</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          결론: 달그림자가 지면(465 m/s)보다 동쪽으로 더 빨리(1,023 m/s) 달려,
+          지면 기준 <strong>약 558 m/s(≈2,010 km/h)</strong>로 서→동으로 지나갑니다.
+          따라서 관측자에겐 달이 동쪽(왼쪽)으로 이동하고, 태양은 <strong>오른쪽부터</strong> 가려집니다.
+          <code>v<sub>달</sub> / v<sub>지표</sub> = (ω<sub>달</sub>/ω<sub>지구</sub>) × (d<sub>달</sub>/R<sub>지구</sub>) = (1/27) × 60 ≈ 2.2</code>
+        </p>
+      </div>
+    </details>
+  </header>
+
+  <section class="controls" aria-label="시뮬레이션 컨트롤">
+    <div class="ctrl-row">
+      <button id="playBtn" class="btn btn-primary" aria-label="재생/일시정지">⏸ 일시정지</button>
+
+      <label class="ctrl-inline">
+        시간
+        <input id="timeSlider" type="range" min="0" max="1000" value="0" step="1" />
+        <span id="phaseLabel" class="phase-label">1차 접촉</span>
+      </label>
+
+      <label class="ctrl-inline">
+        속도
+        <select id="speedSel">
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-group-label">여러 시점:</span>
+      <div id="snapshots" class="snapshots"></div>
+    </div>
+
+    <div class="ctrl-row">
+      <label class="toggle"><input id="toggleWrong" type="checkbox" /> 학생들의 틀린 예측 표시</label>
+      <label class="toggle"><input id="toggleVectors" type="checkbox" checked /> 속도 벡터·라벨 표시</label>
+    </div>
+  </section>
+
+  <main class="grid">
+    <figure class="panel">
+      <canvas id="space" class="view"></canvas>
+      <figcaption>① 우주 시점 — 자전(각속도 큼)과 공전(선속도 큼)의 대비 <span class="muted">· 거리·크기 비례 아님</span></figcaption>
+    </figure>
+
+    <figure class="panel">
+      <canvas id="sky" class="view"></canvas>
+      <figcaption>② 관측자 하늘 — 달이 태양을 <strong>오른쪽(서)부터</strong> 가림 <span class="muted">· 북반구 남쪽 하늘 기준</span></figcaption>
+    </figure>
+
+    <figure class="panel">
+      <canvas id="ground" class="view"></canvas>
+      <figcaption>③ 지표 위 경주 — 달그림자(1,023)가 지표(465)를 추월 <span class="muted">· 관성계</span></figcaption>
+    </figure>
+
+    <figure class="panel">
+      <canvas id="bars" class="view"></canvas>
+      <figcaption>④ 각속도 vs 선속도 — 숫자로 보는 핵심</figcaption>
+    </figure>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      가정: 적도·정오 근처, 평행한 햇빛(태양은 무한 원거리), 항성일/항성월 기준.
+      거리와 크기는 화면에 맞게 과장했지만 <strong>각속도·선속도의 비율은 실제 값</strong>을 사용했습니다.
+    </p>
+  </footer>
+
+  <script src="sim.js"></script>
+</body>
+</html>

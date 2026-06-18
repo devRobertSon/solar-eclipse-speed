@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+# 정적 사이트(index.html + styles.css + sim.js)를 GitHub Pages로 배포한다.
+# 한 번만 Settings → Pages → Source 를 "GitHub Actions" 로 설정하면 동작한다.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/upbeat-goodall-bqle2r
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시에 한 배포만 진행
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

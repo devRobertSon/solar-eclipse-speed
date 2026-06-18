@@ -1,0 +1,203 @@
+:root {
+  --bg: #070b16;
+  --panel: #0d1326;
+  --panel-2: #111a33;
+  --text: #e6ebf5;
+  --dim: #9aa6c0;
+  --accent: #22d3ee;
+  --accent-2: #4ade80;
+  --warn: #f87171;
+  --border: rgba(255, 255, 255, 0.09);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", sans-serif;
+  line-height: 1.55;
+}
+
+body {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+/* ---------- Header ---------- */
+.site-header h1 {
+  font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+  margin: 4px 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.tagline {
+  margin: 0 0 12px;
+  color: var(--dim);
+  font-size: 0.98rem;
+}
+.tagline strong { color: var(--text); }
+
+.explainer {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 14px;
+  margin-bottom: 14px;
+}
+.explainer summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 0;
+  color: var(--accent);
+}
+.explainer-body { padding: 4px 0 12px; font-size: 0.95rem; }
+.explainer-body code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+.explainer-body em { color: var(--warn); font-style: italic; }
+
+.phys-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.92rem;
+}
+.phys-table th, .phys-table td {
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+}
+.phys-table thead th { background: var(--panel-2); color: var(--dim); }
+.phys-table tbody th { background: rgba(255, 255, 255, 0.03); white-space: nowrap; }
+.ratio-row td, .ratio-row th { background: rgba(34, 211, 238, 0.08); }
+
+/* ---------- Controls ---------- */
+.controls {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ctrl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.ctrl-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--dim);
+}
+.ctrl-group-label { font-size: 0.9rem; color: var(--dim); }
+
+#timeSlider { width: min(360px, 46vw); accent-color: var(--accent); }
+.phase-label {
+  min-width: 96px;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: #18254a; }
+.btn-primary { border-color: rgba(34, 211, 238, 0.5); }
+
+select, .btn { font-family: inherit; }
+select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.snapshots { display: flex; flex-wrap: wrap; gap: 8px; }
+.snap-btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+.snap-btn:hover { background: #18254a; }
+.snap-btn.active {
+  border-color: var(--accent);
+  background: rgba(34, 211, 238, 0.16);
+  color: #fff;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  color: var(--dim);
+  cursor: pointer;
+}
+.toggle input { accent-color: var(--accent); }
+
+/* ---------- Grid of views ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.panel {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.view {
+  display: block;
+  width: 100%;
+  height: 300px;
+}
+figcaption {
+  padding: 8px 12px 10px;
+  font-size: 0.86rem;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+}
+figcaption .muted { color: var(--dim); font-weight: 400; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: 18px;
+  color: var(--dim);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+  .view { height: 260px; }
+  #timeSlider { width: 60vw; }
+}

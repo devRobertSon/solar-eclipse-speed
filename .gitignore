@@ -1,0 +1,10 @@
+# OS / 에디터 부산물
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# 의존성/빌드 (이 프로젝트는 빌드가 필요 없음)
+node_modules/
+dist/
