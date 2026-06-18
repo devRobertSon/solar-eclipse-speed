@@ -136,7 +136,37 @@ function drawSpaceL(ctx, W, H, p) {
     text(ctx, '달 공전(동쪽)', mx + 7, my - 11, { size: 10, color: C.vLin });
   }
 
-  disc(ctx, '거리 압축(비례 아님) · 북극 상공', W, H);
+  /* 지구 관측자(자전): 밤(오른쪽=반태양) 반구에서 달을 바라보며 반시계로 회전 */
+  const S = (cx, cy, r, th) => [cx + r * Math.cos(th), cy - r * Math.sin(th)];
+  const wE = 2 * Math.PI / (23.934 * 3600);
+  const dThE = wE * (3.4 * 3600);          // 본영 통과 ~3.4시간 → 지구 ~51° 자전
+  const obsTh = dThE * (p - 0.5);          // 최대식(p=0.5)에 달 정면(오른쪽)을 향함
+  const [ox, oy] = S(Ex, Ey, Re, obsTh);
+
+  // 쓸고 간 자전각 부채꼴(밤 쪽)
+  ctx.fillStyle = 'rgba(70,195,230,0.24)';
+  ctx.beginPath(); ctx.moveTo(Ex, Ey);
+  ctx.arc(Ex, Ey, Re * 0.6, dThE / 2, -obsTh, true);
+  ctx.closePath(); ctx.fill();
+  // 자전 방향(반시계)
+  arrow(ctx, Ex + 11, Ey - Re - 6, Ex - 11, Ey - Re - 6, C.vAng, 2.5, 7);
+  text(ctx, '자전 ↺', Ex - 14, Ey - Re - 11, { size: 10, color: C.vAng, align: 'right' });
+  // 시선(관측자 → 달)
+  ctx.strokeStyle = 'rgba(20,30,50,0.28)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(mx, my); ctx.stroke(); ctx.setLineDash([]);
+  // 관측자 점 + 선속도
+  ctx.fillStyle = C.accent;
+  ctx.beginPath(); ctx.arc(ox, oy, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (state.showVectors) {
+    const ot = [-Math.sin(obsTh), -Math.cos(obsTh)];
+    arrow(ctx, ox, oy, ox + 20 * ot[0], oy + 20 * ot[1], C.vLin, 2.5, 7);
+  }
+  text(ctx, '관측자(밤)', ox + 7, oy + 13, { size: 10, color: C.accent });
+
+  text(ctx, '관측자도 자전으로 이동 — 단, 월식은 밤이면 어디서나 똑같이 보임', 12, 40, { size: 10.5, color: C.text });
+
+  disc(ctx, '거리 압축 · 약 3.4h에 지구 ~51° 자전', W, H);
 }
 
 /* =====================================================================
