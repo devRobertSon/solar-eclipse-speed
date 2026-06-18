@@ -28,6 +28,15 @@ const C = {
 };
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif';
 
+/* ---------- 물리 상수 (solar.js와 동일) ---------- */
+const PHYS = (() => {
+  const R_E = 6371, d_M = 384400;
+  const wE = 2 * Math.PI / (23.934 * 3600);
+  const wM = 2 * Math.PI / (27.32 * 86400);
+  const vSurf = wE * R_E * 1000, vMoon = wM * d_M * 1000;
+  return { wE, wM, vSurf, vMoon, vRatio: vMoon / vSurf }; // vRatio ≈ 2.2
+})();
+
 /* ---------- 상태 ---------- */
 const DURATION = 16; // 초, p:0→1
 const state = { p: 0, playing: true, speed: 1, showVectors: true, scrubbing: false };
@@ -73,6 +82,7 @@ function drawSpaceL(ctx, W, H, p) {
   ctx.fillRect(0, 0, W, H);
   panelTitle(ctx, '① 북극 상공에서 본 지구–그림자–달');
 
+  const S = (cx, cy, r, th) => [cx + r * Math.cos(th), cy - r * Math.sin(th)];
   const Ey = H * 0.55;
   const Re = Math.min(H * 0.17, 46);
   const Ex = W * 0.30;
@@ -84,31 +94,33 @@ function drawSpaceL(ctx, W, H, p) {
   }
   text(ctx, '햇빛(평행)', 6, Ey - Re * 1.2 - 7, { size: 10.5, color: C.sun });
 
-  const uLen = (W - Ex) * 0.92;
-  const xApex = Ex + uLen;
+  /* 일식과 동일한 선속도 비(2.2) 유지:
+   * 같은 시간(본영 통과 ~3.4h) 동안 관측자(지표) 호 = Re·dThE,
+   * 달 이동 = vRatio × (관측자 호). 본영 반폭은 1차/종료가 p=0/1에 오도록 맞춤. */
+  const T_ECL = 3.4 * 3600;
+  const dThE = PHYS.wE * T_ECL;                 // 지구 자전각 (~51°)
+  const earthArc = Re * dThE;                   // 관측자 호(px)
+  const moonPath = PHYS.vRatio * earthArc;      // 달 이동(px) = 2.2배
+  const aM = Math.min(W - Ex - 28, Re * 3.6);
+  const Rm = Math.max(5, Re * 0.22);
+  const Uh = moonPath / 2 - Rm;                 // 본영 반폭
 
-  /* 반영(penumbra): 바깥쪽으로 벌어짐 */
-  ctx.fillStyle = 'rgba(20,30,50,0.08)';
+  /* 본영(수렴 원뿔): 달 위치에서 반폭 = Uh 가 되도록 꼭짓점 계산 */
+  const xApex = Ex + Re * aM / Math.max(2, Re - Uh);
+  ctx.fillStyle = 'rgba(20,30,50,0.08)';        // 반영(벌어짐)
   ctx.beginPath();
-  ctx.moveTo(Ex, Ey - Re); ctx.lineTo(xApex, Ey - Re * 2.4);
-  ctx.lineTo(xApex, Ey + Re * 2.4); ctx.lineTo(Ex, Ey + Re);
+  ctx.moveTo(Ex, Ey - Re); ctx.lineTo(W, Ey - Re * 2.0);
+  ctx.lineTo(W, Ey + Re * 2.0); ctx.lineTo(Ex, Ey + Re);
   ctx.closePath(); ctx.fill();
-
-  /* 본영(umbra): 지구 양 끝 → 한 점으로 수렴하는 어두운 원뿔 */
-  ctx.fillStyle = 'rgba(10,14,28,0.80)';
+  ctx.fillStyle = 'rgba(10,14,28,0.80)';        // 본영(어두운 원뿔)
   ctx.beginPath();
   ctx.moveTo(Ex, Ey - Re); ctx.lineTo(xApex, Ey); ctx.lineTo(Ex, Ey + Re);
   ctx.closePath(); ctx.fill();
-  text(ctx, '지구 본영(그림자)', (Ex + xApex) / 2, Ey - 6, { size: 10.5, color: '#cdd6e6', align: 'center' });
+  text(ctx, '지구 본영(그림자)', Ex + aM * 0.5, Ey - Uh - 5, { size: 10.5, color: '#9aa6c0', align: 'center' });
 
-  /* 달 궤도(압축) + 달이 본영을 세로로 통과 */
-  const aM = Math.min(W - Ex - 28, Re * 3.6);
-  const moonXc = Ex + aM;
-  const Uh = Math.max(8, Re * (xApex - moonXc) / uLen); // 달 거리에서 본영 반폭
-  const Rm = Math.max(5, Re * 0.22);
-  const my = Ey + (1 - 2 * p) * (Uh + Rm);             // 아래→위(반시계=동쪽)
+  /* 달: 본영을 세로로 통과 (이동폭 = moonPath, 1차→종료 = p:0→1) */
+  const my = Ey + (1 - 2 * p) * (moonPath / 2);
   const mx = Ex + Math.sqrt(Math.max(0, aM * aM - (my - Ey) * (my - Ey)));
-
   ctx.strokeStyle = 'rgba(20,30,50,0.16)';
   ctx.setLineDash([4, 5]); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(Ex, Ey, aM, -1.0, 1.0); ctx.stroke();
@@ -123,7 +135,6 @@ function drawSpaceL(ctx, W, H, p) {
   ng.addColorStop(0, 'rgba(0,0,0,0)'); ng.addColorStop(1, 'rgba(0,0,0,0.5)');
   ctx.fillStyle = ng;
   ctx.beginPath(); ctx.arc(Ex, Ey, Re, 0, Math.PI * 2); ctx.fill();
-  text(ctx, '지구', Ex, Ey + Re + 14, { size: 10.5, color: C.dim, align: 'center' });
 
   /* 달 (본영 안이면 핏빛) */
   const inUmbra = Math.abs(my - Ey) < Uh;
@@ -131,42 +142,35 @@ function drawSpaceL(ctx, W, H, p) {
   ctx.beginPath(); ctx.arc(mx, my, Rm, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = 'rgba(40,55,85,0.55)'; ctx.lineWidth = 1; ctx.stroke();
 
+  /* 선속도 벡터 — 일식과 동일하게 비율 2.2 (달 = 관측자 × 2.2) */
+  const obsLen = 20, moonLen = obsLen * PHYS.vRatio;
   if (state.showVectors) {
-    arrow(ctx, mx, my, mx, my - 22, C.vLin, 2.5, 7); // 공전 접선(반시계=동쪽=위)
-    text(ctx, '달 공전(동쪽)', mx + 7, my - 11, { size: 10, color: C.vLin });
+    arrow(ctx, mx, my, mx, my - moonLen, C.vLin, 2.5, 8);
+    text(ctx, '달 1,023 m/s', mx + 7, my - moonLen * 0.5, { size: 10, color: C.vLin });
   }
 
-  /* 지구 관측자(자전): 밤(오른쪽=반태양) 반구에서 달을 바라보며 반시계로 회전 */
-  const S = (cx, cy, r, th) => [cx + r * Math.cos(th), cy - r * Math.sin(th)];
-  const wE = 2 * Math.PI / (23.934 * 3600);
-  const dThE = wE * (3.4 * 3600);          // 본영 통과 ~3.4시간 → 지구 ~51° 자전
-  const obsTh = dThE * (p - 0.5);          // 최대식(p=0.5)에 달 정면(오른쪽)을 향함
+  /* 지구 관측자(자전): 밤(오른쪽=반태양) 반구에서 달을 보며 반시계로 회전 */
+  const obsTh = dThE * (p - 0.5);
   const [ox, oy] = S(Ex, Ey, Re, obsTh);
-
-  // 쓸고 간 자전각 부채꼴(밤 쪽)
-  ctx.fillStyle = 'rgba(70,195,230,0.24)';
+  ctx.fillStyle = 'rgba(70,195,230,0.24)';      // 쓸고 간 자전각 부채꼴
   ctx.beginPath(); ctx.moveTo(Ex, Ey);
   ctx.arc(Ex, Ey, Re * 0.6, dThE / 2, -obsTh, true);
   ctx.closePath(); ctx.fill();
-  // 자전 방향(반시계)
   arrow(ctx, Ex + 11, Ey - Re - 6, Ex - 11, Ey - Re - 6, C.vAng, 2.5, 7);
   text(ctx, '자전 ↺', Ex - 14, Ey - Re - 11, { size: 10, color: C.vAng, align: 'right' });
-  // 시선(관측자 → 달)
   ctx.strokeStyle = 'rgba(20,30,50,0.28)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(mx, my); ctx.stroke(); ctx.setLineDash([]);
-  // 관측자 점 + 선속도
   ctx.fillStyle = C.accent;
   ctx.beginPath(); ctx.arc(ox, oy, 4.5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
   if (state.showVectors) {
     const ot = [-Math.sin(obsTh), -Math.cos(obsTh)];
-    arrow(ctx, ox, oy, ox + 20 * ot[0], oy + 20 * ot[1], C.vLin, 2.5, 7);
+    arrow(ctx, ox, oy, ox + obsLen * ot[0], oy + obsLen * ot[1], C.vLin, 2.5, 7);
+    text(ctx, '관측자 465 m/s', ox - 8, oy + 14, { size: 10, color: C.accent, align: 'right' });
   }
-  text(ctx, '관측자(밤)', ox + 7, oy + 13, { size: 10, color: C.accent });
 
-  text(ctx, '관측자도 자전으로 이동 — 단, 월식은 밤이면 어디서나 똑같이 보임', 12, 40, { size: 10.5, color: C.text });
-
-  disc(ctx, '거리 압축 · 약 3.4h에 지구 ~51° 자전', W, H);
+  text(ctx, '관측자도 자전 — 단, 월식은 밤이면 어디서나 똑같이 보임', 12, 40, { size: 10.5, color: C.text });
+  disc(ctx, '거리 압축 · 선속도 比 2.2(일식과 동일) · 지구 ~51° 자전', W, H);
 }
 
 /* =====================================================================
