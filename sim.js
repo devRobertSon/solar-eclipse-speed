@@ -29,28 +29,29 @@ const fmt = (x, d = 0) =>
   Number(x).toLocaleString('ko-KR', { maximumFractionDigits: d, minimumFractionDigits: d });
 const kmh = (ms) => ms * 3.6;
 
-/* ---------- 색상 테마 ---------- */
+/* ---------- 색상 테마 (라이트) ---------- */
 const C = {
-  panel: '#0d1326',
-  sky: ['#0a1430', '#142a52'],
-  sun: '#ffce3a',
-  sunCore: '#fff2c2',
-  sunGlow: 'rgba(255, 180, 50, 0.40)',
-  moon: '#0c1226',
-  moonRim: 'rgba(150, 165, 195, 0.7)',
-  earth: '#2a6cd6',
-  earthDeep: '#1b4a99',
+  panel: '#ffffff',
+  sky: ['#e8f4ff', '#c7e2ff'],         // 낮 하늘(부분식 중에도 밝음)
+  sun: '#f5a201',
+  sunCore: '#ffd866',
+  sunRim: 'rgba(180, 120, 0, 0.55)',
+  sunGlow: 'rgba(250, 170, 30, 0.34)',
+  moon: '#10182b',                     // 어두운 달(밝은 배경에서 잘 보임)
+  moonRim: 'rgba(40, 55, 85, 0.55)',
+  earth: '#2f74de',
+  earthDeep: '#1c4fa0',
   land: '#2f9460',
-  obs: '#22d3ee',
-  shadow: 'rgba(4, 7, 16, 0.82)',
-  penumbra: 'rgba(4, 7, 16, 0.30)',
-  vLin: '#4ade80',   // 선속도(linear)
-  vAng: '#fb923c',   // 각속도(angular)
-  wrong: '#f87171',  // 학생들의 틀린 예측
-  text: '#e6ebf5',
-  dim: '#9aa6c0',
-  accent: '#22d3ee',
-  grid: 'rgba(255, 255, 255, 0.08)',
+  obs: '#0e7490',                      // 청록(흰 배경 대비)
+  shadow: 'rgba(10, 14, 28, 0.82)',
+  penumbra: 'rgba(10, 14, 28, 0.20)',
+  vLin: '#15803d',   // 선속도(linear)
+  vAng: '#ea580c',   // 각속도(angular)
+  wrong: '#dc2626',  // 학생들의 틀린 예측
+  text: '#18202e',
+  dim: '#5a6679',
+  accent: '#0e7490',
+  grid: 'rgba(20, 30, 50, 0.12)',
 };
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif';
@@ -171,12 +172,12 @@ function drawSpace(ctx, W, H, p) {
   /* 평행한 햇빛 (왼→오) */
   for (let i = 0; i < 5; i++) {
     const ry = Ey - Re * 1.1 + (i * Re * 2.2) / 4;
-    arrow(ctx, 6, ry, 46, ry, 'rgba(255,206,58,0.5)', 2, 6);
+    arrow(ctx, 6, ry, 46, ry, 'rgba(235,150,15,0.75)', 2, 6);
   }
   text(ctx, '햇빛(평행)', 6, Ey - Re * 1.1 - 7, { size: 10.5, color: C.sun });
 
   /* 달 공전 궤도(압축) */
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.strokeStyle = 'rgba(20,30,50,0.16)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 5]);
   ctx.beginPath();
@@ -188,8 +189,8 @@ function drawSpace(ctx, W, H, p) {
   if (Math.abs(my - Ey) < Re) {
     const hitX = Ex - Math.sqrt(Re * Re - (my - Ey) * (my - Ey));
     const g = ctx.createLinearGradient(mx, my, hitX, my);
-    g.addColorStop(0, 'rgba(4,7,16,0.0)');
-    g.addColorStop(1, 'rgba(4,7,16,0.55)');
+    g.addColorStop(0, 'rgba(10,14,28,0.0)');
+    g.addColorStop(1, 'rgba(10,14,28,0.5)');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.moveTo(mx, my - moonR * 0.6);
@@ -198,7 +199,7 @@ function drawSpace(ctx, W, H, p) {
     ctx.lineTo(mx, my + moonR * 0.6);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = 'rgba(4,7,16,0.85)';
+    ctx.fillStyle = 'rgba(10,14,28,0.85)';
     ctx.beginPath();
     ctx.arc(hitX + 2, my, moonR * 0.45, 0, Math.PI * 2);
     ctx.fill();
@@ -236,7 +237,7 @@ function drawSpace(ctx, W, H, p) {
   ctx.restore();
 
   /* 관측자가 자전으로 쓸고 간 각(≈30°) — '조금만 돈다'를 강조 */
-  ctx.fillStyle = 'rgba(34,211,238,0.16)';
+  ctx.fillStyle = 'rgba(14,116,144,0.18)';
   ctx.beginPath();
   ctx.moveTo(Ex, Ey);
   ctx.arc(Ex, Ey, Re * 0.6, -(Math.PI - dThE / 2), -obsTh, true);
@@ -248,9 +249,12 @@ function drawSpace(ctx, W, H, p) {
   ctx.beginPath();
   ctx.arc(ox, oy, 4.5, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
   /* 달 (태양쪽=왼쪽 밝음, 오른쪽 어둠) */
-  ctx.fillStyle = '#c2cbdd';
+  ctx.fillStyle = '#aeb8cc';
   ctx.beginPath();
   ctx.arc(mx, my, moonR, 0, Math.PI * 2);
   ctx.fill();
@@ -258,11 +262,16 @@ function drawSpace(ctx, W, H, p) {
   ctx.beginPath();
   ctx.arc(mx, my, moonR, 0, Math.PI * 2);
   ctx.clip();
-  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.fillStyle = 'rgba(10,14,28,0.38)';
   ctx.beginPath();
   ctx.arc(mx + moonR * 0.55, my, moonR, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+  ctx.strokeStyle = C.moonRim;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(mx, my, moonR, 0, Math.PI * 2);
+  ctx.stroke();
 
   /* 회전 방향(반시계) */
   arrow(ctx, Ex + 11, Ey - Re - 6, Ex - 11, Ey - Re - 6, C.vAng, 2.5, 7); // 지구 위에서 왼쪽 = 반시계
@@ -319,6 +328,11 @@ function drawSky(ctx, W, H, p) {
   ctx.beginPath();
   ctx.arc(cx, cy, sunR, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = C.sunRim;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, sunR, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.fillStyle = C.sunCore;
   ctx.beginPath();
   ctx.arc(cx, cy, sunR * 0.82, 0, Math.PI * 2);
@@ -382,7 +396,7 @@ function drawGround(ctx, W, H, p) {
   const laneY = H * 0.62;
 
   // 지면 + 고정 눈금(관성계)
-  ctx.fillStyle = '#161d33';
+  ctx.fillStyle = '#e7ecf4';
   ctx.fillRect(0, laneY, W, H - laneY);
   ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
@@ -405,13 +419,13 @@ function drawGround(ctx, W, H, p) {
   const obsY = laneY;
 
   // 궤적
-  ctx.strokeStyle = 'rgba(34,211,238,0.35)';
+  ctx.strokeStyle = 'rgba(14,116,144,0.45)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(m + (0.45) * laneW, obsY - 26);
   ctx.lineTo(obsX, obsY - 26);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(74,222,128,0.30)';
+  ctx.strokeStyle = 'rgba(21,128,61,0.40)';
   ctx.beginPath();
   ctx.moveTo(m + (0.45 - 0.5 * (aShadow - aObs)) * laneW, obsY - 52);
   ctx.lineTo(shadowX, obsY - 52);
@@ -421,7 +435,7 @@ function drawGround(ctx, W, H, p) {
   const umbraR = 30;
   const inEclipse = Math.abs(shadowX - obsX) < umbraR * 0.6;
   if (inEclipse) {
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = 'rgba(20,30,50,0.14)';
     ctx.fillRect(0, 0, W, laneY);
   }
 
@@ -435,7 +449,7 @@ function drawGround(ctx, W, H, p) {
   ctx.ellipse(shadowX, obsY - 52, umbraR, umbraR * 0.7, 0, 0, Math.PI * 2);
   ctx.fill();
   // 그림자에서 지면으로 떨어지는 선
-  ctx.strokeStyle = 'rgba(4,7,16,0.5)';
+  ctx.strokeStyle = 'rgba(10,14,28,0.5)';
   ctx.setLineDash([3, 4]);
   ctx.beginPath();
   ctx.moveTo(shadowX, obsY - 52);
@@ -509,7 +523,7 @@ function drawBars(ctx, W, H) {
       const bx = gx + colW * (0.28 + bi * 0.44) - bw / 2;
       const h = Math.max(3, (b.val / grp.max) * maxBarH);
       const win = bi === grp.winner;
-      ctx.fillStyle = win ? C.vLin : '#39507f';
+      ctx.fillStyle = win ? C.vLin : '#9aa6bf';
       ctx.fillRect(bx, baseY - h, bw, h);
       text(ctx, b.txt, bx + bw / 2, baseY - h - 6, { size: 11, weight: '600', align: 'center', color: win ? C.vLin : C.text });
       text(ctx, b.name, bx + bw / 2, baseY + 16, { size: 10.5, color: C.dim, align: 'center' });
