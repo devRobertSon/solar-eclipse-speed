@@ -32,6 +32,9 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # 저장소에 Pages가 아직 꺼져 있으면 워크플로가 직접 켠다(소스=GitHub Actions).
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
